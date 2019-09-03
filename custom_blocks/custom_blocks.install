@@ -1,0 +1,90 @@
+<?php
+
+/* 
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+
+/**
+ * Implements hook_schema().
+ */
+function custom_blocks_schema() {
+
+  $schema = array();
+
+  $schema['custom_blocks'] = array(
+		'fields' => array(	
+			'id' => array(
+				'description' => 'The primary identifier for custom_blocks table',
+				'type' => 'serial',
+				'not null' => TRUE,
+				'unsigned' => TRUE,
+			),
+			'block_name' => array(
+				'type' => 'varchar',
+				'length' => 20,        
+				'description' => 'Block Name',
+			),
+			'block_status' => array(
+				'type' => 'int',
+				'description' => 'Status: 0=Disable, 1=Enable',
+			),	
+			'block_ip' => array(
+				'type' => 'text',
+				'description' => 'Block disable For IP',
+			),	
+			'created_on' => array(
+				'type' => 'varchar',
+				'length' => 20, 
+				'description' => 'Created Date.',
+			),				
+		),
+		'primary key' => array('id'),
+		'auto increment' => 1
+	);	
+	
+	$schema['custom_block_fields'] = array(
+		'fields' => array(	
+			'id' => array(
+				'description' => 'The primary identifier for custom_blocks_fields table',
+				'type' => 'serial',
+				'not null' => TRUE,
+				'unsigned' => TRUE,
+			),
+			'block_id' => array(
+				'type' => 'int',		     
+				'description' => "Block ID.",
+			),
+			'title' => array(
+				'type' => 'varchar',
+				'length' => 100,        
+				'description' => 'Title',
+			),
+			'image' => array(
+				'type' => 'varchar',
+				'length' => 255,        
+				'description' => 'Image',
+			),
+			'details' => array(
+				'type' => 'text',
+				'description' => 'Image',
+			),
+			'status' => array(
+				'type' => 'int',
+				'description' => 'Status: 0=Disable, 1=Enable',
+			),	
+			'created_on' => array(
+				'type' => 'varchar',
+				'length' => 20, 
+				'description' => 'Created Date.',
+			),				
+		),
+		'primary key' => array('id'),
+		'auto increment' => 1
+	);
+
+  return $schema;
+}

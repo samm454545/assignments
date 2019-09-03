@@ -1,0 +1,256 @@
+<?php
+/**
+ * This module stores all all EMI transaction made in entire system.'
+*/
+/**
+ * Implements hook_node_info().
+ */
+function custom_blocks_menu(){
+	$items = array();
+	$items['admin/add_custom_block'] = array(
+		'title' => 'Add Custom Blocks',
+		'description' => 'Add Custom Blocks',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('_add_custom_block'),
+		'access callback' => 'user_access',
+		'access arguments' => array('administer users'),
+	);
+	$items['admin/add_custom_block_data'] = array(
+		'title' => 'Add Custom Blocks Data',
+		'description' => 'Add Custom Blocks Data',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('_add_custom_block_data'),
+		'access callback' => 'user_access',
+		'access arguments' => array('administer users'),
+	);
+	return $items;
+}
+
+
+/**
+* Imlementing hook_permission 
+*/
+function custom_blocks_permission(){
+  return array(
+    'custom_blocks'=> array(
+    'title' => t('Custom Blocks'),
+    'description' => t('Manages all Custom Blocks'),
+    ),
+  );
+}
+
+function _add_custom_block_data($form, &$form_state) {
+	$ex=db_query("select * from custom_blocks where block_status=1")->fetchAll();
+	$arr=array(''=>'--Select--');
+	foreach($ex as $x)
+	{
+		$arr[$x->id]=$x->block_name;
+	}
+	$form['block_id'] = array(
+		'#title' => t('Select Block'),
+		'#type' => 'select',
+		'#required' => true,
+		'#options' => $arr,
+		'#default_value' => '',
+		'#weight' => 1,
+	);	
+	
+	$form['title'] = array(
+		'#title' => t('Title'),
+		'#type' => 'textfield',
+		'#required' => true,
+		'#default_value' => '',
+		'#weight' => 2,
+	);
+		
+	$form['image'] = array(
+		'#title' => t('Upload Image'),
+		'#type' => 'managed_file',
+		'#required' => true,
+		'#size' => 40,
+		'#upload_validators' => [
+		  'file_validate_extensions' => ['jpg png']
+		],
+		'#upload_location' => 'public://',
+		'#weight' => 3,
+	);	
+	
+	$form['details'] = array(
+		'#title' => t('Description'),
+		'#type' => 'textarea',
+		'#required' => true,
+		'#default_value' => '',
+		'#weight' => 4,
+	);
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Submit'),
+		'#weight' => 5,
+	);
+
+	return $form;
+}
+
+function _add_custom_block_data_submit($form, &$form_state) {
+	if(!empty($form_state['values']['block_id']))
+	{
+		$block_id=intval($form_state['values']['block_id']);
+		$title=addslashes($form_state['values']['title']);
+		$image=$form_state['values']['image'];
+		$details=addslashes($form_state['values']['details']);
+		
+		db_insert('custom_block_fields') 
+			->fields(array(
+						'block_id' => $block_id,
+						'title' => $title,
+						'image' => $image,
+						'details' => $details,
+						'status' => 1,
+						'created_on' => strtotime('now'),
+				))
+			->execute();
+		drupal_set_message("Block Data Created Successfully.");
+		drupal_goto("/admin/add_custom_block_data");
+	}
+}
+	
+function _add_custom_block($form, &$form_state) {
+	
+	$form['block_name'] = array(
+		'#title' => t('Block Name'),
+		'#type' => 'textfield',
+		'#required' => true,
+		'#default_value' => '',
+		'#weight' => 0,
+	);
+	
+	$form['block_ip'] = array(
+		'#title' => t('Blocked For IP'),
+		'#type' => 'textfield',
+		'#required' => false,
+		'#default_value' => '',
+		'#weight' => 0,
+	);
+	
+	$form['status'] = array(
+		'#title' => t('Status'),
+		'#type' => 'select',
+		'#required' => true,
+		'#options' => array(''=>'--Select--','1'=>'Enable','0'=>'Disable'),
+		'#default_value' => '',
+		'#weight' => 1,
+	);	
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Submit'),
+		'#weight' => 2,
+	);
+
+	return $form;
+}
+
+function _add_custom_block_submit($form, &$form_state) {
+	if(!empty($form_state['values']['block_name']))
+	{
+		$name=addslashes($form_state['values']['block_name']);
+		$stat=intval($form_state['values']['status']);
+		$block_ip=intval($form_state['values']['block_ip']);
+		db_insert('custom_blocks') 
+			->fields(array(
+						'block_name' => $name,
+						'block_status' => $stat,
+						'block_ip' => $block_ip,
+						'created_on' => strtotime('now'),
+				))
+			->execute();
+		drupal_set_message("Block Created Successfully.");
+		drupal_goto("/admin/add_custom_block");
+	}
+}
+
+function custom_blocks_block_info() {
+
+      $fblock = db_select('custom_blocks','cb')
+						->fields('cb')
+						->execute()
+						->fetchAll();
+      foreach($fblock as $block_data){
+        $macname = str_replace(' ','_', $block_data->block_name);
+		$blocks[$block_data->id.'_'.$macname] = array(
+			'info' => t($block_data->block_name),
+			'cache' => DRUPAL_NO_CACHE,
+		);
+      }
+	return $blocks;
+}
+
+
+function custom_blocks_block_view($delta = '') {
+	$fblock = db_select('custom_blocks', 'cb')
+						->fields('cb')
+						->execute()
+						->fetchAll();
+	$ip=$_SERVER['REMOTE_ADDR'];
+      foreach($fblock as $view_block){
+        $macname = str_replace(' ','_', $view_block->block_name);
+	    switch ($delta) {
+		    case $view_block->id.'_'.$macname:
+			if($ip!=$view_block->block_ip)
+			{
+				$block['subject'] = t($view_block->block_name);
+				$block['content'] = array(
+					'#markup' => _custom_block_data_show($view_block->id),
+					'#attached' => array(
+					  'css' => array(
+						drupal_get_path('module', 'custom_blocks') . '/css/custom_blocks.css',
+					  ),
+					),
+				  );
+			}
+			break;
+	    }
+      }
+	return $block;
+}
+
+function _custom_block_data_show($id)
+{
+	$fblock = db_select('custom_block_fields', 'cb')
+						->fields('cb')
+						->condition('cb.block_id',$id,'=')
+						->execute()
+						->fetchAll();
+
+	$items = array();
+	$i=0;
+	foreach($fblock as $fields){
+		$items[$i]['title']=$fields->title;
+		$img=file_load($fields->image);
+		$file_uri = file_create_url($img->uri);
+		$items[$i]['image']=$file_uri;
+		$items[$i]['details']=$fields->details;
+		$i++;
+	}
+
+	return theme('custom_block_template', ['items' => $items]);
+}
+
+function custom_blocks_theme() {
+
+  $module_path = drupal_get_path('module', 'custom_blocks');
+
+  $base = [
+    'path' => "$module_path/theme",
+  ];
+
+  return [
+    'custom_block_template' => $base + [
+        'template'  => 'custom_template',
+        'variables' => [
+          'items' => NULL,
+        ],
+      ],
+  ];
+}

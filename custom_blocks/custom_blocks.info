@@ -1,0 +1,4 @@
+name = Custom Blocks
+description =  Add Dynamic Custom Blocks in multiple pages.
+package = Custom
+core = 7.x
