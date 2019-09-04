@@ -1,0 +1,78 @@
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){
+	$('input[name="gen"]').click(
+		function(){
+			var tot=$('input[name="total"]').val();
+			var len=$('input[name="length"]').val();
+			generate_fields(tot,len,'field_wrapper');
+		}
+	);
+	$('input[name="gen_q"]').click(
+		function(){
+			var tot=$('input[name="q"]').val();
+			var len=$('input[name="length"]').val();
+			generate_fields(tot,len,'field_wrapper_n');
+		}
+	);
+	
+	$('input[name="res"]').click(
+		function(){
+			$('.field_wrapper_n input').each(function(){
+				var cou=0;
+				var qstr=$(this).val();
+				var q=$(this).val().replace(/\?/g, "");  
+				var indices = [];
+				for(var i=0; i<qstr.length;i++) {
+					if (qstr[i] === "?") indices.push(i);
+				}
+				
+				$('.field_wrapper input').each(function(){
+					var w=$(this).val();
+					for(var i=0;i<indices.length;i++)
+					{
+						w=setCharAt(w,indices[i],'?');
+					}
+					w=w.replace(/\?/g, "");  
+					if(w.match(q))
+					{
+						cou++;
+					}
+				});
+				$('.field_out').append('<p>'+cou+'</p>');
+			});
+		}
+	);
+});
+
+function setCharAt(str,index,chr) {
+    if(index > str.length-1) return str;
+    return str.substr(0,index) + chr + str.substr(index+1);
+}
+
+function generate_fields(maxField,c,con)
+{
+    var wrapper = $('.'+con);
+    var fieldHTML = '<div><input type="text" class="inp_fields" maxlength="'+c+'" value=""/></div>'; 
+    
+    for(var i=0;i<maxField;i++){
+      $(wrapper).append(fieldHTML); 
+    }
+    
+}
+</script>
+</head>
+<body>
+<h2>Total Words in dictionary <input type="text" name="total" style="width:50px;" value=""/> with length 
+<input type="text" name="length" style="width:50px;" value=""/></h2>
+<p><input type="button" name="gen" style="width:150px;" value="Create"/></p>
+<div class="field_wrapper"></div>
+<h2>Total queries <input type="text" name="q" style="width:50px;" value=""/></h2>
+<p><input type="button" name="gen_q" style="width:150px;" value="Create"/></p>
+<div class="field_wrapper_n"></div>
+<p><input type="button" name="res" style="width:150px;" value="Print Result"/></p>
+<div class="field_out"></div>
+</body>
+</html>
